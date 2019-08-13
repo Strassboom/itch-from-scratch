@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border: 1px solid #d3d3d3;
+    background-color: #222222;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    max-width: 960px;
+    max-height: 540px;
+}
+body {
+    background-color: rgb(0, 255, 255);
+}
+table {
+    margin-left: 15%;
+    margin-right: 15%;
+    display: block;
+    color: #FFFFFF;
+    align : center;
+}
+.playerOne{
+    width: 33%;
+    text-align: left;
+}
+.playerTwo{
+    width: 33%;
+    text-align: right;
+}
+.announcement{
+    width: 33%;
+    text-align: center;
+}
+</style>
+</head>
+
+<body onload="startGame()">
+
+
+<script>
+
+var myGamePieces;
+var middleinterval = 2;
+var nextinterval = 20;
+var intervalchange = 0;
+var ball;
+var otherball;
+
+function newRound(){
+    myGamePieces = [];
+    playerOne = new paddle(myGameArea.canvas.width/40, myGameArea.canvas.height/4, "red", myGameArea.canvas.width / 48, myGameArea.canvas.height * (120/270),Number(myGameArea.player1Score.innerHTML));
+    playerTwo = new paddle(myGameArea.canvas.width/40, myGameArea.canvas.height/4, "yellow", myGameArea.canvas.width * (47/48) - myGameArea.canvas.width/40, myGameArea.canvas.height * (120/270),Number(myGameArea.player2Score.innerHTML));
+    playerOne.controls = {"up":87,"left":65,"down":83,"right":68};
+    playerTwo.controls = {"up":38,"left":37,"down":40,"right":39};
+    myGamePieces.push(playerOne);
+    myGamePieces.push(playerTwo);
+    ball = new Ball(myGameArea.canvas.width/40,myGameArea.canvas.width/40,"white",myGameArea.canvas.width/2,myGameArea.canvas.height/2);
+}
+
+function startGame() {
+    myGameArea.start();
+    newRound();
+}
+
+var myGameArea = {
+		gameinfo : document.createElement("table"),
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = window.innerWidth*0.9655;//480;
+        this.canvas.height = this.canvas.width * (270/480);
+        this.context = this.canvas.getContext("2d");
+        document.body.appendChild(this.canvas);
+        this.intervals = [1,5,10,15,20];
+        this.intervalnum = 2;
+        this.interval = setInterval(updateGameArea, this.intervals[this.intervalnum]);
+        
+        this.song = document.createElement("AUDIO");
+        this.song.src="/static/timepongtheme.wav";
+        this.song.type="audio/wav";
+        this.song.autoplay=true;
+        this.song.loop=true;
+        this.song.muted=false;
+        this.playbackSpeeds = [2.5,1.5,1.0,0.5,0.25];
+        this.song.playbackRate = this.playbackSpeeds[this.intervalnum];
+        document.body.appendChild(this.song);
+        this.song.play();
+
+        this.inforow = this.gameinfo.insertRow(0);
+        this.player1cell = this.inforow.insertCell(0);
+        this.player1cell.innerHTML = "Player1";
+        this.player1cell.className = "playerOne";
+        this.announcementcell = this.inforow.insertCell(1);
+        this.announcementcell.innerHTML = "Let\'s play!";
+        this.announcementcell.className = "announcement";
+    	  this.player2cell = this.inforow.insertCell(2);
+        this.player2cell.innerHTML = "Player2";
+        this.player2cell.className = "playerTwo";
+        
+        this.valuerow = this.gameinfo.insertRow(1);
+        this.player1Score = this.valuerow.insertCell(0);
+        this.player1Score.innerHTML = 0;
+        this.player1Score.className = "playerOne";
+        this.announcementCommentary = this.valuerow.insertCell(1);
+        this.announcementCommentary.innerHTML = this.intervals[this.intervalnum];
+        this.announcementCommentary.className = "announcement";
+        this.player2Score = this.valuerow.insertCell(2);
+        this.player2Score.innerHTML = 0;
+        this.player2Score.className = "playerTwo";
+        document.body.insertBefore(this.gameinfo, document.body.childNodes[0]);
+
+        window.addEventListener('keydown', function (e) {
+            myGameArea.keys = (myGameArea.keys || []);
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");            
+        })
+    }, 
+    clear : function(){
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function paddle(width, height, color, x, y,score) {
+    this.gamearea = myGameArea;
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+    this.speedpotential = myGameArea.canvas.height * (2/270);
+    this.score = score;
+    this.bbox = {"top":this.y,"bottom":this.y+this.height,"left":this.x,"middleX":this.x+this.width/2,"right":this.x+this.width};
+    this.update = function() {
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.bbox["top"] = this.y;
+        this.bbox["bottom"] = this.y+this.height;
+    }    
+}
+
+function Ball(width, height, color, x, y) {
+    this.gamearea = myGameArea;
+    this.width = width;
+    this.height = height;
+    this.speedX = playerOne.speedpotential;
+    this.speedY = 0;
+    this.x = x
+    this.y = y
+    this.left = this.x;
+    this.right = this.x + this.width;
+    this.top = this.y;
+    this.bottom = this.y + this.height;
+    
+    this.update = function() {
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+        if (this.top < 0){
+          this.y = 0;
+          this.speedY = - this.speedY;
+        }
+        else if (this.bottom > myGameArea.canvas.height){
+          this.y = myGameArea.canvas.height - this.height;
+          this.speedY = - this.speedY;
+        }
+        if (playerOne.x + playerOne.width >= this.x + this.speedX){
+          if (this.y + this.height >= playerOne.y && this.y <= playerOne.y + playerOne.height){
+            this.speedX = this.speedX * -1;
+          }
+          this.speedY = this.speedY + playerOne.speedY;
+        }
+        if (playerTwo.x <= this.x + this.width + this.speedX){
+          if (this.y + this.height >= playerTwo.y && this.y <= playerTwo.y + playerTwo.height){
+            this.speedX = this.speedX * -1;
+          }
+          this.speedY = this.speedY + playerTwo.speedY;
+        }
+        if (this.right >= myGameArea.canvas.width){
+          playerOne.score += 1;
+          myGameArea.player1Score.innerHTML = playerOne.score;
+          newRound();
+
+        }
+        if (this.left <= 0){
+          playerTwo.score += 1;
+          myGameArea.player2Score.innerHTML = playerTwo.score;
+          newRound();
+        }
+        
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.left = this.x;
+        this.center = this.x + this.width/2;
+        this.right = this.x + this.width;
+        this.top = this.y;
+        this.bottom = this.y + this.height;
+    }    
+}
+
+
+function updateGameArea() {
+    //Clears canvas for refresh and resets intervalchange shifter
+    myGameArea.clear();
+    intervalchange = 0;
+    
+    //iterates over gamepieces
+    //shifts intervalchange left or right depending on key pressed
+    // moves player paddles depending on key pressed
+    for (piece of myGamePieces){
+        piece.speedX = 0;
+        piece.speedY = 0;
+        if (myGameArea.keys && myGameArea.keys[piece.controls["left"]]) {intervalchange -= 1;}
+        else if (myGameArea.keys && myGameArea.keys[piece.controls["right"]]) {intervalchange += 1; }
+        if (myGameArea.keys && myGameArea.keys[piece.controls["up"]]) {if (piece.y > 0){piece.speedY = - piece.speedpotential;} }
+        if (myGameArea.keys && myGameArea.keys[piece.controls["down"]]) {if (piece.y + piece.height < myGameArea.canvas.height){ piece.speedY = piece.speedpotential; }}
+      }
+      //myGameArea.announcementCommentary.innerHTML = playerOne.bbox["bottom"],ball.bottom;
+      if (myGameArea.intervalnum != 2 + intervalchange){
+        clearInterval(myGameArea.interval);
+        myGameArea.intervalnum = 2 + intervalchange;
+        //myGameArea.announcementCommentary.innerHTML = playerOne.bbox["bottom"];//myGameArea.intervals[myGameArea.intervalnum];
+        myGameArea.interval = setInterval(updateGameArea, myGameArea.intervals[myGameArea.intervalnum]);
+        myGameArea.song.playbackRate = myGameArea.playbackSpeeds[myGameArea.intervalnum];
+        }
+      for (piece of myGamePieces){
+        piece.newPos();    
+       	piece.update();
+      }
+      ball.newPos();
+      ball.update();
+      myGameArea.announcementCommentary.innerHTML = myGameArea.song.playbackRate//ball.speedX//ball.y >= playerOne.y && ball.y <= playerOne.y + playerOne.height//playerOne.bbox["top"] +"," +ball.bottom;
+}
+</script>
+</body>
+</html>
