@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+
+    <body>
+        <canvas id="level">
+
+        </canvas>
+        <script></script>
+        <script type="text/javascript" src="./devRoom.js">
+            import { nodes, startPoint } from "./devRoom.js";
+
+            //console.log(nodes["a"]["children"]["b"]["distance"]);
+        </script>
+        <script>
+            var canvas = document.getElementById("level");
+            canvas.width = 400;
+            canvas.height = 400;
+            var ctx = canvas.getContext("2d");
+
+            function updateBG(){
+                ctx.fillStyle = "grey";
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.stroke();
+                //console.log(nodes["a"]["position"]);
+                ctx.fillStyle = "aqua";
+                ctx.strokeStyle = "aqua";
+                ctx.beginPath();
+                //var shortest = {};
+                //console.log(typeof(nodes));
+                for (var allkeys of Object.keys(nodes)){
+                    for (var key in nodes[allkeys]["children"]){
+                        ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
+                        ctx.lineTo(nodes[key]["position"][0],nodes[key]["position"][1]);
+                        //ctx.closePath();
+                        //ctx.stroke();
+                        //shortest[key] = distance(startPoint,key);
+                    }
+                }
+                ctx.moveTo(nodes[startPoint]["position"][0],nodes[startPoint]["position"][1]);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            //if (shortest["b"] < shortest["c"]){
+            //    console.log("b");
+            //}
+            //else{
+            //    console.log("c");
+            //}
+
+            function distance(point1,point2){
+                x1 = nodes[point1]["position"][0];
+                y1 = nodes[point1]["position"][1];
+                x2 = nodes[point2]["position"][0];
+                y2 = nodes[point2]["position"][1];
+                return Math.ceil(Math.sqrt(Math.pow(x2-x1,2)+Math.pow(y2-y1,2)* 100) / 100);
+            }
+
+
+            function getShortest(){
+                var shortest = "";
+                for (var key in nodes[Monster.currentNode]["children"]){
+                    if (shortest != ""){
+                        if (key != Monster.lastNode && key != Monster.currentNode){
+                            if (distance(Monster.currentNode,key) < distance(Monster.currentNode,shortest)){
+                                shortest = key;
+                            }
+                            else if (shortest == ""){
+                                shortest = key;
+                            }
+                        }
+                    }
+                    else if (key != Monster.lastNode){
+                            shortest = key;
+                        }
+                }
+                return shortest
+            }
+
+
+            function slope(point1,point2){
+                diffx = nodes[point2]["position"][0] - nodes[point1]["position"][0];
+                diffy = nodes[point2]["position"][1] - nodes[point1]["position"][1];
+                return [diffx,diffy];
+            }
+
+            function moveMonster(){
+                if (Monster.currentNode != ""){
+                    normal = getShortest();
+                    if (normal != Monster.nextNode){
+                        Monster.nextNode = normal;
+                        Monster.lastNode = Monster.currentNode;
+                        nodes[Monster.currentNode]["hasMonster"] = false;
+                        Monster.currentNode = "";
+                        
+                    }
+                }
+                else{
+                    if (Monster.progress >= 1.0){
+                        Monster.position = [nodes[Monster.nextNode]["position"][0],nodes[Monster.nextNode]["position"][1]];
+                        Monster.currentNode = Monster.nextNode;
+                        Monster.nextNode = "";
+                        Monster.progress = 0.0;
+                        nodes[Monster.currentNode]["hasMonster"] = true;
+                        console.log(Monster.currentNode);
+                    }
+                    else{
+                        Monster.progress += Monster.speed * nodes[Monster.lastNode]["children"][Monster.nextNode]["speed"];
+                        moving = slope(Monster.lastNode,Monster.nextNode);
+                        Monster.position = [nodes[Monster.lastNode]["position"][0] + moving[0] * Monster.progress, nodes[Monster.lastNode]["position"][1] + moving[1] * Monster.progress];
+                        ctx.moveTo(Monster.position[0],Monster.position[1]);
+                        ctx.arc(Monster.position[0],Monster.position[1],10,0,2*Math.PI);
+                        ctx.fill();
+                    }
+                }
+                ctx.moveTo(Monster.position[0],Monster.position[1]);
+                ctx.arc(Monster.position[0],Monster.position[1],10,0,2*Math.PI);
+                ctx.fill();
+            }
+
+            function gameUpdate(){
+                ctx.clearRect(0,0,400,400);
+                updateBG();
+                moveMonster();
+                setInterval(gameUpdate,60)
+            }
+
+            var Monster = {
+                lastNode : startPoint,
+                currentNode: startPoint,
+                nextNode : "",
+                speed : 0.0001,
+                position : [nodes[startPoint]["position"][0],nodes[startPoint]["position"][1]],
+                progress : 0.0
+            }
+            
+            nodes[Monster.currentNode]["hasMonster"] = true;
+            ctx.arc(nodes[Monster.currentNode]["position"][0],nodes[Monster.currentNode]["position"][1],10,0,2*Math.PI);
+            ctx.closePath();
+            ctx.fill();
+            console.log(getShortest());
+            gameUpdate();
+        </script>
+    </body>
+</html>

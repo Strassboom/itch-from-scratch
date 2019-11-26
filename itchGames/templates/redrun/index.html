@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+        canvas {
+    border: 1px solid #d3d3d3;
+    background-color: #222222;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    max-width: 960px;
+    max-height: 540px;
+}
+body {
+    background-color: rgba(0, 255, 255, 0.288);
+}
+table {
+    margin-left: 15%;
+    margin-right: 15%;
+    display: block;
+    color: #FFFFFF;
+    align : center;
+}
+.playerOne{
+    width: 33%;
+    text-align: left;
+}
+.playerTwo{
+    width: 33%;
+    text-align: right;
+}
+.announcement{
+    width: 33%;
+    text-align: center;
+}
+        </style>
+    </head>
+    <body onload="startGame()">
+        <h1 id="fixInfo">Tanja is hella cute!</h1>
+        <script>
+        // assigns game canvas to myGameArea variable
+        
+var myGamePieces;
+var myWalls;
+var middleinterval = 2;
+var nextinterval = 20;
+var intervalchange = 0;
+
+function newRound(){
+    myGamePieces = [];
+    myWalls = [];
+    playerOne = new paddle(myGameArea.canvas.width/40, myGameArea.canvas.height/4, "red", myGameArea.canvas.width / 48, myGameArea.canvas.height * (120/270));
+    //playerTwo = new paddle(myGameArea.canvas.width/40, myGameArea.canvas.height/4, "yellow", myGameArea.canvas.width * (47/48) - myGameArea.canvas.width/40, myGameArea.canvas.height * (120/270),Number(myGameArea.player2Score.innerHTML));
+    playerOne.controls = {"up":87,"left":65,"down":83,"right":68};
+    //playerTwo.controls = {"up":38,"left":37,"down":40,"right":39};
+    myGamePieces.push(playerOne);
+    corn = new wall(50,50,50,50,"Corn1.png");
+    myWalls.push(corn);
+    //myGamePieces.push(playerTwo);
+    //ball = new Ball(myGameArea.canvas.width/40,myGameArea.canvas.width/40,"white",myGameArea.canvas.width/2,myGameArea.canvas.height/2);
+}
+
+function startGame() {
+    myGameArea.start();
+    newRound();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = window.innerWidth*0.9655;//480;
+        this.canvas.height = this.canvas.width * (270/480);
+        this.context = this.canvas.getContext("2d");
+        document.body.appendChild(this.canvas);
+        this.interval = setInterval(updateGameArea, 20);
+        
+        window.addEventListener('keydown', function (e) {
+            myGameArea.keys = (myGameArea.keys || []);
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.keys[e.keyCode] = (e.type == "keydown");            
+        })
+    }, 
+    clear : function(){
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function paddle(width, height, color, x, y) {
+    this.gamearea = myGameArea;
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+    this.speedpotential = myGameArea.canvas.height * (2/270);
+    this.bbox = {"top":this.y,"bottom":this.y+this.height,"left":this.x,"middleX":this.x+this.width/2,"right":this.x+this.width};
+    this.update = function() {
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.bbox["top"] = this.y;
+        this.bbox["bottom"] = this.y+this.height;
+        this.bbox["left"] = this.x;
+        this.bbox["right"] = this.x+this.width;
+    }    
+}
+
+function wall(width,height,x,y,src){
+    this.x = x;
+    this.y = y;
+    this.width=width;
+    this.height=height;
+    this.corny = document.createElement("IMG");
+    this.corny.width = this.width;
+    this.corny.height = this.height;
+    this.corny.src = src;
+    this.update = function() {
+        //ctx = myGameArea.context;
+        //ctx.fillStyle = color;
+        myGameArea.context.drawImage(this.corny,this.x,this.y,this.width,this.height);
+    }
+    document.body.appendChild(this.corny);
+}
+
+
+function updateGameArea() {
+    //Clears canvas for refresh and resets intervalchange shifter
+    myGameArea.clear();
+    
+    //iterates over gamepieces
+    //shifts intervalchange left or right depending on key pressed
+    // moves player paddles depending on key pressed
+    for (piece of myGamePieces){
+        piece.speedX = 0;
+        piece.speedY = 0;
+        if (myGameArea.keys) {
+            if(myGameArea.keys[piece.controls["left"]]){
+                if (piece.x > 0){piece.speedX -= piece.speedpotential;}
+            }
+            if (myGameArea.keys[piece.controls["right"]]) {
+                if (piece.x + piece.width < myGameArea.canvas.width){piece.speedX += piece.speedpotential;}
+            }
+            if (myGameArea.keys[piece.controls["up"]]) {
+                if (piece.y > 0){piece.speedY = - piece.speedpotential;}
+            }
+            if (myGameArea.keys[piece.controls["down"]]) {
+                if (piece.y + piece.height < myGameArea.canvas.height){ piece.speedY = piece.speedpotential;}
+            }
+        }
+      }
+      //myGameArea.announcementCommentary.innerHTML = playerOne.bbox["bottom"],ball.bottom;
+        //myGameArea.announcementCommentary.innerHTML = playerOne.bbox["bottom"];//myGameArea.intervals[myGameArea.intervalnum];
+      for (piece of myGamePieces){
+        piece.newPos();    
+       	piece.update();
+      }
+      myWalls[0].update();
+      //myGameArea.context.drawImage(corn.corny,corn.x,corn.y,corn.width,corn.height);
+      }
+
+        </script>
+    </body>
+</html>
