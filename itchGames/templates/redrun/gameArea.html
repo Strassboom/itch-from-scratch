@@ -92,7 +92,7 @@
                     if (normal != Monster.nextNode){
                         Monster.nextNode = normal;
                         Monster.lastNode = Monster.currentNode;
-                        nodes[Monster.currentNode]["hasMonster"] = false;
+                        //nodes[Monster.currentNode]["hasMonster"] = false;
                         Monster.currentNode = "";
                         
                     }
@@ -103,7 +103,7 @@
                         Monster.currentNode = Monster.nextNode;
                         Monster.nextNode = "";
                         Monster.progress = 0.0;
-                        nodes[Monster.currentNode]["hasMonster"] = true;
+                        //nodes[Monster.currentNode]["hasMonster"] = true;
                         console.log(Monster.currentNode);
                     }
                     else{
@@ -136,7 +136,7 @@
                 progress : 0.0
             }
             
-            nodes[Monster.currentNode]["hasMonster"] = true;
+            //nodes[Monster.currentNode]["hasMonster"] = true;
             ctx.arc(nodes[Monster.currentNode]["position"][0],nodes[Monster.currentNode]["position"][1],10,0,2*Math.PI);
             ctx.closePath();
             ctx.fill();

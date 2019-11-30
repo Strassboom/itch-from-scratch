@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    body {
+        background-color: #CC5555;
+    }
+    canvas {
+        background-color: #CC8888;
+    }
+    </style>
+</head>
+<body>
+    <canvas id="mapcanvas" width=400 height=400></canvas>
+    <!--<script type="text/javascript" src="./devRoom.js">
+        import { nodes, startPoint } from "./devRoom.js";
+    </script>-->
+    <script>
+        var noderadius = 10
+        var baseArray = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
+        var madeNodes = [];
+        var nodes = {};
+        var stackNode = "";
+        var moving = false;
+
+        function updateBG(){
+            //ctx.fillStyle = "grey";
+            //ctx.fillRect(0,0,canvas.width,canvas.height);
+            //ctx.stroke();
+            //console.log(nodes["a"]["position"]);
+            ctx.fillStyle = "aqua";
+            ctx.strokeStyle = "aqua";
+            ctx.beginPath();
+            //var shortest = {};
+            //console.log(typeof(nodes));
+            for (var allkeys of Object.keys(nodes)){
+                ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
+                if (allkeys == stackNode){
+                    ctx.strokeRect(nodes[allkeys]["position"][0]-(noderadius/2.0),nodes[allkeys]["position"][1]-(noderadius/2.0),noderadius,noderadius);
+                }
+                ctx.arc(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1],5,0,2*Math.PI);
+                ctx.closePath();
+                ctx.fill();
+                for (var key in nodes[allkeys]["children"]){
+                    ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
+                    ctx.lineTo(nodes[key]["position"][0],nodes[key]["position"][1]);
+                    //ctx.closePath();
+                    //ctx.stroke();
+                    //shortest[key] = distance(startPoint,key);
+                }
+            }
+            if (Object.keys(nodes).length > 0){
+                ctx.moveTo(nodes[Object.keys(nodes)[0]]["position"][0],nodes[Object.keys(nodes)[0]]["position"][1]);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function getMousePosition(canvas, event) { 
+            let rect = canvas.getBoundingClientRect(); 
+            let x = event.clientX - rect.left; 
+            let y = event.clientY - rect.top; 
+            console.log("Coordinate x: " + x,  
+                        "Coordinate y: " + y); 
+            return {"x": x,"y": y};
+        } 
+
+        function getDiff(arr1,arr2){
+            let difference = arr1.filter(x => !arr2.includes(x))
+            return difference
+        }
+
+        function createNode(mousePos){
+            console.log("oh");
+            nodeNameOptions = getDiff(baseArray,Object.keys(nodes));
+            console.log(nodeNameOptions);
+            if (nodeNameOptions.length > 0){
+                nodes[nodeNameOptions[0]] = {"position": [mousepos["x"],mousepos["y"]],"children":{}};
+            }
+        }
+
+        function deleteNode(stackNode){
+            for (var key of Object.keys(nodes)){
+                if (typeof(nodes[key]["children"][stackNode]) != "undefined"){
+                    delete nodes[key]["children"][stackNode];
+                }
+            }
+            delete nodes[key];
+        }
+
+        function connectNodes(peekNode,stackNode){
+            if (typeof(nodes[peekNode]["children"][stackNode]) == "undefined"){
+                nodes[peekNode]["children"][stackNode] = {"speed":1.0};
+                nodes[stackNode]["children"][peekNode] = {"speed":1.0};
+            }
+        }
+
+        function disconnectNodes(peekNode,stackNode){
+            if (typeof(nodes[peekNode]["children"][stackNode]) != "undefined"){
+                delete nodes[peekNode]["children"][stackNode];
+                delete nodes[stackNode]["children"][peekNode];
+            }
+        }
+
+        function isInNode(key,pos){
+            if (nodes[key]["position"][0]-(noderadius/2.0) <= pos["x"] && pos["x"] <= nodes[key]["position"][0]+(noderadius/2.0)){
+                if (nodes[key]["position"][1]-(noderadius/2.0) <= pos["y"] && pos["y"] <= nodes[key]["position"][1]+(noderadius/2.0)){
+                    return key;
+                }
+            }
+            return ""
+        }
+
+        function isInAnyNode(pos){
+            for (var key of Object.keys(nodes)){
+                clickTarget = isInNode(key,pos);
+                if (clickTarget != ""){
+                    return clickTarget;
+                }
+            }
+            return "";
+        }
+
+        function clickDown(mousepos,e){
+            let peekNode = isInAnyNode(mousepos);
+            if (peekNode != ""){ //Assume peekNode is not blank
+                if (stackNode != ""){ //Assume stackNode is not blank
+                    if (stackNode == peekNode){ // stackNode will follow the mouse until let go
+                        moving = true;
+                    }
+                }
+            }
+        }
+
+        function clickUp(mousepos,e){
+            
+            let peekNode = isInAnyNode(mousepos);
+            console.log("peekChecked");
+            console.log(peekNode);
+            if (peekNode == ""){
+                if (stackNode == ""){
+                    createNode(mousepos);
+                }
+                else {
+                    stackNode = "";
+                }
+            }
+            else{   //Assume peekNode is not blank
+                if (stackNode == ""){   //Set a node as selected
+                    stackNode = peekNode;
+                }
+                else{   //Assume peekNode and stackNode are not blank
+                    if (stackNode == peekNode){ // stackNode will stop moving at current mouse coordinates
+                        moving = false;
+                    }
+                    else{   //Assume peekNode and stackNode are neither blank nor the same
+                        if (Object.keys(nodes[peekNode]["children"]).includes(stackNode)){
+                            disconnectNodes(peekNode,stackNode);
+                        }
+                        else{
+                            connectNodes(peekNode,stackNode);
+                        }
+                    }
+                }
+                peekNode = "";
+            }
+        }
+
+        var canvas = document.querySelector("canvas");
+        var ctx = canvas.getContext("2d");
+        canvas.addEventListener("mousedown", function(e) 
+        {   
+            if (e.button == 0){
+                mousepos = getMousePosition(canvas, e);
+                clickDown(mousepos,e);
+            }
+        });
+        canvas.addEventListener("mouseup", function(e) 
+        {   
+            if (e.button == 0){
+                mousepos = getMousePosition(canvas, e);
+                clickUp(mousepos,e);
+            }
+        });
+
+        function gameUpdate(){
+                ctx.clearRect(0,0,400,400);
+                updateBG();
+                setInterval(gameUpdate,60)
+        }
+        gameUpdate();
+    </script>
+</body>
+</html>
