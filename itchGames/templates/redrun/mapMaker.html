@@ -22,17 +22,16 @@
         var nodes = {};
         var stackNode = "";
         var moving = false;
+        var canvas = document.querySelector("canvas");
+        var garbage = {"position":[60,60]}
+        var garbageradius = 40
 
         function updateBG(){
-            //ctx.fillStyle = "grey";
-            //ctx.fillRect(0,0,canvas.width,canvas.height);
-            //ctx.stroke();
-            //console.log(nodes["a"]["position"]);
+            ctx.fillStyle = "grey";
+            ctx.fillRect(0,0,garbageradius,garbageradius);
             ctx.fillStyle = "aqua";
             ctx.strokeStyle = "aqua";
             ctx.beginPath();
-            //var shortest = {};
-            //console.log(typeof(nodes));
             for (var allkeys of Object.keys(nodes)){
                 ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
                 if (allkeys == stackNode){
@@ -44,9 +43,6 @@
                 for (var key in nodes[allkeys]["children"]){
                     ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
                     ctx.lineTo(nodes[key]["position"][0],nodes[key]["position"][1]);
-                    //ctx.closePath();
-                    //ctx.stroke();
-                    //shortest[key] = distance(startPoint,key);
                 }
             }
             if (Object.keys(nodes).length > 0){
@@ -62,9 +58,16 @@
             let y = event.clientY - rect.top; 
             console.log("Coordinate x: " + x,  
                         "Coordinate y: " + y); 
-            return {"x": x,"y": y};
+            return [x,y];
         } 
 
+        function updatePos(event){
+            if (stackNode != ""){
+                console.log(nodes[stackNode]["position"]);
+                nodes[stackNode]["position"] = getMousePosition(canvas,event);
+            }
+        }
+            
         function getDiff(arr1,arr2){
             let difference = arr1.filter(x => !arr2.includes(x))
             return difference
@@ -75,7 +78,7 @@
             nodeNameOptions = getDiff(baseArray,Object.keys(nodes));
             console.log(nodeNameOptions);
             if (nodeNameOptions.length > 0){
-                nodes[nodeNameOptions[0]] = {"position": [mousepos["x"],mousepos["y"]],"children":{}};
+                nodes[nodeNameOptions[0]] = {"position": [mousepos[0],mousepos[1]],"children":{}};
             }
         }
 
@@ -85,7 +88,7 @@
                     delete nodes[key]["children"][stackNode];
                 }
             }
-            delete nodes[key];
+            delete nodes[stackNode];
         }
 
         function connectNodes(peekNode,stackNode){
@@ -103,8 +106,8 @@
         }
 
         function isInNode(key,pos){
-            if (nodes[key]["position"][0]-(noderadius/2.0) <= pos["x"] && pos["x"] <= nodes[key]["position"][0]+(noderadius/2.0)){
-                if (nodes[key]["position"][1]-(noderadius/2.0) <= pos["y"] && pos["y"] <= nodes[key]["position"][1]+(noderadius/2.0)){
+            if (nodes[key]["position"][0]-(noderadius/2.0) <= pos[0] && pos[0] <= nodes[key]["position"][0]+(noderadius/2.0)){
+                if (nodes[key]["position"][1]-(noderadius/2.0) <= pos[1] && pos[1] <= nodes[key]["position"][1]+(noderadius/2.0)){
                     return key;
                 }
             }
@@ -127,13 +130,13 @@
                 if (stackNode != ""){ //Assume stackNode is not blank
                     if (stackNode == peekNode){ // stackNode will follow the mouse until let go
                         moving = true;
+                        canvas.addEventListener("mousemove",updatePos);
                     }
                 }
             }
         }
 
         function clickUp(mousepos,e){
-            
             let peekNode = isInAnyNode(mousepos);
             console.log("peekChecked");
             console.log(peekNode);
@@ -151,7 +154,12 @@
                 }
                 else{   //Assume peekNode and stackNode are not blank
                     if (stackNode == peekNode){ // stackNode will stop moving at current mouse coordinates
+                        canvas.removeEventListener("mousemove",updatePos);
                         moving = false;
+                        if (nodes[stackNode]["position"][0] < garbage["position"][0]+garbageradius && nodes[stackNode]["position"][1] < garbage["position"][1]+garbageradius){
+                            deleteNode(stackNode);
+                        }
+                        stackNode = "";
                     }
                     else{   //Assume peekNode and stackNode are neither blank nor the same
                         if (Object.keys(nodes[peekNode]["children"]).includes(stackNode)){
@@ -159,6 +167,7 @@
                         }
                         else{
                             connectNodes(peekNode,stackNode);
+                            stackNode = peekNode;
                         }
                     }
                 }

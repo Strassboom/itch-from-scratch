@@ -6,6 +6,10 @@ app = Flask(__name__)
 def game(gameName):
     return render_template(gameName+"/index.html")
 
+@app.route("/<gameName>/<tool>")
+def tools(gameName,tool):
+    return render_template(gameName+"/"+tool+".html")
+
 @app.route("/")
 def practice():
     return render_template("gameDevPractice/gameDevPractive.html")
