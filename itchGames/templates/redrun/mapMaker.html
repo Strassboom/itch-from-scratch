@@ -131,6 +131,7 @@
                     if (stackNode == peekNode){ // stackNode will follow the mouse until let go
                         moving = true;
                         canvas.addEventListener("mousemove",updatePos);
+                        canvas.addEventListener("touchmove",updatePos);
                     }
                 }
             }
@@ -155,6 +156,7 @@
                 else{   //Assume peekNode and stackNode are not blank
                     if (stackNode == peekNode){ // stackNode will stop moving at current mouse coordinates
                         canvas.removeEventListener("mousemove",updatePos);
+                        canvas.addEventListener("touchmove",updatePos);
                         moving = false;
                         if (nodes[stackNode]["position"][0] < garbage["position"][0]+garbageradius && nodes[stackNode]["position"][1] < garbage["position"][1]+garbageradius){
                             deleteNode(stackNode);
@@ -184,7 +186,24 @@
                 clickDown(mousepos,e);
             }
         });
+
+        canvas.addEventListener("touchstart", function(e) 
+        {   
+            if (e.button == 0){
+                mousepos = getMousePosition(canvas, e);
+                clickDown(mousepos,e);
+            }
+        });
+
         canvas.addEventListener("mouseup", function(e) 
+        {   
+            if (e.button == 0){
+                mousepos = getMousePosition(canvas, e);
+                clickUp(mousepos,e);
+            }
+        });
+
+        canvas.addEventListener("touchend", function(e) 
         {   
             if (e.button == 0){
                 mousepos = getMousePosition(canvas, e);
