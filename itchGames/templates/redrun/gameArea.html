@@ -1,70 +1,100 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <style>
+            html,body{
+                background-color: black;
+            }
+            button {
+                background-color: black;
+                color: red; 
+                border: none;
+                outline:0;
+            }
+        </style>
     </head>
 
     <body>
-        <canvas id="level">
-
-        </canvas>
-        <script></script>
+        <canvas id="level"></canvas>
+        <button id="clickme" onclick="GameArea.start()">playme</button>
         <script type="text/javascript" src="./devRoom.js">
             import { nodes, startPoint } from "./devRoom.js";
-
-            //console.log(nodes["a"]["children"]["b"]["distance"]);
         </script>
-        <script>
-            var canvas = document.getElementById("level");
-            canvas.width = 400;
-            canvas.height = 400;
-            var ctx = canvas.getContext("2d");
 
-            function updateBG(){
-                ctx.fillStyle = "grey";
-                ctx.fillRect(0,0,canvas.width,canvas.height);
-                ctx.stroke();
-                //console.log(nodes["a"]["position"]);
-                ctx.fillStyle = "aqua";
-                ctx.strokeStyle = "aqua";
-                ctx.beginPath();
-                //var shortest = {};
-                //console.log(typeof(nodes));
+        <script>
+            var GameArea = {
+                start: function(){
+                    //Canvas Variables
+                    this.canvas = document.getElementById("level");
+                    this.canvas.width = 400;
+                    this.canvas.height = 400;
+                    this.ctx = this.canvas.getContext("2d");
+                    var noderadius = 5;
+
+                    //Sound Variables
+                    this.audioContext;
+                    this.oscill;
+                    this.gang;
+                    this.ttime;
+                    this.G4 = 440 * Math.pow(2, -2/12);
+                    this.bufferSize = 4096;
+                    this.whiteNoise;
+                    this.startAudio();
+                    this.gameUpdate();
+                },
+
+            startAudio: function(){
+                this.audioContext = new AudioContext();
+                this.oscill = this.audioContext.createOscillator();
+                this.gang = this.audioContext.createGain();   
+                this.oscill.connect(this.gang);
+                
+                
+                this.whiteNoise = this.audioContext.createScriptProcessor(this.bufferSize, 1, 1);
+                this.whiteNoise.onaudioprocess = function(e) {
+                    var output = e.outputBuffer.getChannelData(0);
+                        for (var i = 0; i < this.bufferSize; i++) {
+                            output[i] = Math.random() * 2 - 1;
+                        }
+                }
+                this.whiteNoise.connect(this.gang)
+                this.gang.connect(this.audioContext.destination);
+                this.whiteNoise.start;
+
+            },
+
+            updateBG: function(){
+                //this.ctx.fillStyle = "grey";
+                //this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+                //this.ctx.stroke();
+                this.ctx.fillStyle = "aqua";
+                this.ctx.strokeStyle = "aqua";
+                this.ctx.beginPath();
                 for (var allkeys of Object.keys(nodes)){
                     for (var key in nodes[allkeys]["children"]){
-                        ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
-                        ctx.lineTo(nodes[key]["position"][0],nodes[key]["position"][1]);
-                        //ctx.closePath();
-                        //ctx.stroke();
-                        //shortest[key] = distance(startPoint,key);
+                        this.ctx.moveTo(nodes[allkeys]["position"][0],nodes[allkeys]["position"][1]);
+                        this.ctx.lineTo(nodes[key]["position"][0],nodes[key]["position"][1]);
                     }
                 }
-                ctx.moveTo(nodes[startPoint]["position"][0],nodes[startPoint]["position"][1]);
-                ctx.closePath();
-                ctx.stroke();
-            }
-            //if (shortest["b"] < shortest["c"]){
-            //    console.log("b");
-            //}
-            //else{
-            //    console.log("c");
-            //}
+                this.ctx.moveTo(nodes[startPoint]["position"][0],nodes[startPoint]["position"][1]);
+                this.ctx.closePath();
+                this.ctx.stroke();
+            },
 
-            function distance(point1,point2){
+            distance : function(point1,point2){
                 x1 = nodes[point1]["position"][0];
                 y1 = nodes[point1]["position"][1];
                 x2 = nodes[point2]["position"][0];
                 y2 = nodes[point2]["position"][1];
                 return Math.ceil(Math.sqrt(Math.pow(x2-x1,2)+Math.pow(y2-y1,2)* 100) / 100);
-            }
+            },
 
-
-            function getShortest(){
+            getShortest: function(){
                 var shortest = "";
-                for (var key in nodes[Monster.currentNode]["children"]){
+                for (var key in nodes[GameArea.Monster.currentNode]["children"]){
                     if (shortest != ""){
-                        if (key != Monster.lastNode && key != Monster.currentNode){
-                            if (distance(Monster.currentNode,key) < distance(Monster.currentNode,shortest)){
+                        if (key != GameArea.Monster.lastNode && key != GameArea.Monster.currentNode){
+                            if (GameArea.distance(GameArea.Monster.currentNode,key) < GameArea.distance(GameArea.Monster.currentNode,shortest)){
                                 shortest = key;
                             }
                             else if (shortest == ""){
@@ -72,76 +102,93 @@
                             }
                         }
                     }
-                    else if (key != Monster.lastNode){
+                    else if (key != GameArea.Monster.lastNode){
                             shortest = key;
                         }
                 }
                 return shortest
-            }
+            },
 
 
-            function slope(point1,point2){
+            slope: function(point1,point2){
                 diffx = nodes[point2]["position"][0] - nodes[point1]["position"][0];
                 diffy = nodes[point2]["position"][1] - nodes[point1]["position"][1];
                 return [diffx,diffy];
-            }
+            },
 
-            function moveMonster(){
-                if (Monster.currentNode != ""){
-                    normal = getShortest();
-                    if (normal != Monster.nextNode){
-                        Monster.nextNode = normal;
-                        Monster.lastNode = Monster.currentNode;
-                        //nodes[Monster.currentNode]["hasMonster"] = false;
-                        Monster.currentNode = "";
+            moveMonster: function(){
+                if (GameArea.Monster.currentNode != ""){
+                    normal = GameArea.getShortest();
+                    if (normal != GameArea.Monster.nextNode){
+                        GameArea.Monster.nextNode = normal;
+                        GameArea.Monster.lastNode = GameArea.Monster.currentNode;
+                        GameArea.Monster.currentNode = "";
                         
                     }
                 }
                 else{
-                    if (Monster.progress >= 1.0){
-                        Monster.position = [nodes[Monster.nextNode]["position"][0],nodes[Monster.nextNode]["position"][1]];
-                        Monster.currentNode = Monster.nextNode;
-                        Monster.nextNode = "";
-                        Monster.progress = 0.0;
+                    if (GameArea.Monster.progress >= 1.0){
+                        GameArea.Monster.position = [nodes[GameArea.Monster.nextNode]["position"][0],nodes[GameArea.Monster.nextNode]["position"][1]];
+                        GameArea.Monster.currentNode = GameArea.Monster.nextNode;
+                        GameArea.Monster.nextNode = "";
+                        GameArea.Monster.progress = 0.0;
                         //nodes[Monster.currentNode]["hasMonster"] = true;
-                        console.log(Monster.currentNode);
+                        //console.log(GameArea.Monster.currentNode);
                     }
                     else{
-                        Monster.progress += Monster.speed * nodes[Monster.lastNode]["children"][Monster.nextNode]["speed"];
-                        moving = slope(Monster.lastNode,Monster.nextNode);
-                        Monster.position = [nodes[Monster.lastNode]["position"][0] + moving[0] * Monster.progress, nodes[Monster.lastNode]["position"][1] + moving[1] * Monster.progress];
-                        ctx.moveTo(Monster.position[0],Monster.position[1]);
-                        ctx.arc(Monster.position[0],Monster.position[1],10,0,2*Math.PI);
-                        ctx.fill();
+                        GameArea.Monster.progress += GameArea.Monster.speed * nodes[GameArea.Monster.lastNode]["children"][GameArea.Monster.nextNode]["speed"];
+                        moving = GameArea.slope(GameArea.Monster.lastNode,GameArea.Monster.nextNode);
+                        GameArea.Monster.position = [nodes[GameArea.Monster.lastNode]["position"][0] + moving[0] * GameArea.Monster.progress, nodes[GameArea.Monster.lastNode]["position"][1] + moving[1] * GameArea.Monster.progress];
+                        this.ctx.moveTo(GameArea.Monster.position[0],GameArea.Monster.position[1]);
+                        this.ctx.arc(GameArea.Monster.position[0],GameArea.Monster.position[1],this.noderadius*2,0,2*Math.PI);
+                        this.ctx.fill();
                     }
                 }
-                ctx.moveTo(Monster.position[0],Monster.position[1]);
-                ctx.arc(Monster.position[0],Monster.position[1],10,0,2*Math.PI);
-                ctx.fill();
-            }
+                this.ctx.moveTo(GameArea.Monster.position[0],GameArea.Monster.position[1]);
+                this.ctx.arc(GameArea.Monster.position[0],GameArea.Monster.position[1],this.noderadius*2,0,2*Math.PI);
+                this.ctx.fill();
+            },
 
-            function gameUpdate(){
-                ctx.clearRect(0,0,400,400);
-                updateBG();
-                moveMonster();
-                setInterval(gameUpdate,60)
-            }
+            soundUpdate: function(){
+                //soundprogress = Monster.progress;
+                //a = Monster.position;
+                //header.innerHTML = a.x + ", " + a.y;
+                //o.frequency.value = 16.35 + (7885.65 * (a.x / 100.0))
+                this.gang.gain.value = GameArea.Monster.progress / 2.0;
+            },
+            effectsUpdate: function(){
+                this.ctx.globalAlpha = GameArea.Monster.progress / 2.0;
+                this.ctx.fillStyle = "red";
+                this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+                this.ctx.globalAlpha = 1.0;
+                // Create gradient
+                var grd = this.ctx.createRadialGradient(GameArea.Monster.position[0],GameArea.Monster.position[1],20 - 18.0 * GameArea.Monster.progress,GameArea.Monster.position[0],GameArea.Monster.position[1],110 - 80.0 * GameArea.Monster.progress);
+                grd.addColorStop(0,"transparent");
+                grd.addColorStop(1,"black");
 
-            var Monster = {
+                // Fill with gradient
+                this.ctx.fillStyle = grd;
+                this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+
+            },
+            gameUpdate: function(){
+                GameArea.ctx.clearRect(0,0,GameArea.canvas.width,GameArea.canvas.height);
+                GameArea.updateBG();
+                GameArea.moveMonster();
+                GameArea.effectsUpdate();
+                GameArea.soundUpdate();
+                setInterval(GameArea.gameUpdate,60)
+            },
+
+            Monster : {
                 lastNode : startPoint,
                 currentNode: startPoint,
                 nextNode : "",
                 speed : 0.0001,
                 position : [nodes[startPoint]["position"][0],nodes[startPoint]["position"][1]],
                 progress : 0.0
-            }
-            
-            //nodes[Monster.currentNode]["hasMonster"] = true;
-            ctx.arc(nodes[Monster.currentNode]["position"][0],nodes[Monster.currentNode]["position"][1],10,0,2*Math.PI);
-            ctx.closePath();
-            ctx.fill();
-            console.log(getShortest());
-            gameUpdate();
+            },
+        }
         </script>
     </body>
 </html>

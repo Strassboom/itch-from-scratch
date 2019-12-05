@@ -12,6 +12,10 @@
 </head>
 <body>
     <canvas id="mapcanvas" width=400 height=400></canvas>
+    <form method="POST">
+        <input id = "oof" type="hidden" name="hoe" value="">
+        <input type="submit" value="Submit" name="Hello" onclick="download()">
+    </form>
     <!--<script type="text/javascript" src="./devRoom.js">
         import { nodes, startPoint } from "./devRoom.js";
     </script>-->
@@ -25,6 +29,15 @@
         var canvas = document.querySelector("canvas");
         var garbage = {"position":[60,60]}
         var garbageradius = 40
+
+        function download(content, fileName, contentType) {
+            var a = document.createElement("a");
+            var file = new Blob(["var nodes = ",JSON.stringify(nodes),"\n","var startPoint = \"",stackNode,"\""], {type: 'plain/javascript'});
+            a.href = URL.createObjectURL(file);
+            a.download = "newMap.js";
+            a.click();
+        }
+        //download(jsonData, 'json.js', 'text/plain');
 
         function updateBG(){
             ctx.fillStyle = "grey";
@@ -175,6 +188,7 @@
                 }
                 peekNode = "";
             }
+            document.getElementById("oof").value = JSON.stringify(nodes);
         }
 
         var canvas = document.querySelector("canvas");
